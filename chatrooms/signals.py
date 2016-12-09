@@ -1,4 +1,4 @@
-from utils.handlers import MessageHandlerFactory
+from .utils.handlers import MessageHandlerFactory
 from django.dispatch import Signal
 
 

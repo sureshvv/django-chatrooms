@@ -96,7 +96,7 @@ class ChatView(object):
 
     def get_next_message_id(self, room_id):
         """Returns the next message identifier given a room_id """
-        return self.counters[room_id].next()
+        return next(self.counters[room_id])
 
     def get_connected_users(self, room_id):
         """Returns the connected users given a room_id"""

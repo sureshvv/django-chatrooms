@@ -52,7 +52,7 @@ class RedisMessageHandler(MessageHandler):
         pubsub = client.pubsub()
         pubsub.subscribe('chatrooms')
         # 1
-        msg = pubsub.listen().next()  # TODO: timeout?
+        msg = next(pubsub.listen())  # TODO: timeout?
         pubsub.unsubscribe('chatrooms')
         # 2
         messages = Message.objects.filter(room=room_id, id__gt=latest_msg_id)

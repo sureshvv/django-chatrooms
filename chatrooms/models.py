@@ -1,9 +1,10 @@
 #encoding=utf8
 
 from django.db import models
+from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 
-from polymorphic import PolymorphicModel
+from polymorphic.models import PolymorphicModel
 
 
 class Room(PolymorphicModel):
@@ -18,9 +19,8 @@ class Room(PolymorphicModel):
     def __unicode__(self):
         return u"%s" % self.name
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('room_view', [self.slug])
+        return reverse('room_view', kwargs=dict(slug=self.slug))
 
 
 class Message(PolymorphicModel):
