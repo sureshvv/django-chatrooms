@@ -26,7 +26,7 @@ class Room(PolymorphicModel):
 class Message(PolymorphicModel):
     user = models.ForeignKey(User, null=True)
     # username field is useful to store guest name of unauthenticated users
-    username = models.CharField(max_length=20)
+    username = models.CharField(max_length=50)
     date = models.DateTimeField()
     room = models.ForeignKey(Room)
     content = models.CharField(max_length=5000)
