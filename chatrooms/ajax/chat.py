@@ -149,14 +149,15 @@ class ChatView(object):
                         self, room_id, latest_msg_id)
 
         room_name = Room.objects.get(pk=room_id).name
-        to_jsonify = [
-            {"message_id": msg_id,
-             "username": self.full_names[room_id] if message.username == room_name else message.username,
-             "date": (message.date + timedelta(seconds=self.datetime_offset[room_id])).strftime(TIME_FORMAT),
-             "content": message.content}
-            for msg_id, message in messages
-            if msg_id > latest_msg_id
-        ]
+        to_jsonify = []
+        for msg_id, message in messages:
+            if msg_id > latest_msg_id:
+                e1 = {}
+                e1["message_id"] = msg_id
+                e1["username"] = self.full_names[room_id] if message.username == room_name else message.username
+                e1["date"] = (message.date + timedelta(seconds=self.datetime_offset[room_id])).strftime(TIME_FORMAT)
+                e1["content"] = message.content
+                to_jsonify.append(e1)
 
         user = request.user
         if to_jsonify and user.is_authenticated():

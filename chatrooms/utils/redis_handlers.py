@@ -4,7 +4,7 @@ import redis
 from django.db.models import Max
 
 from .handlers import MessageHandler
-from ..models import Room, Message
+from ..models import Room, Message, MX_LEN_USERNAME
 
 
 class RedisMessageHandler(MessageHandler):
@@ -24,6 +24,9 @@ class RedisMessageHandler(MessageHandler):
         2. publish a message to the redis client
 
         """
+
+        if len(username) > MX_LEN_USERNAME:
+            username = username[:MX_LEN_USERNAME]
 
         room = Room.objects.get(id=room_id)
         fields = {

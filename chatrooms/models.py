@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 
 from polymorphic.models import PolymorphicModel
 
+MX_LEN_USERNAME = 50
+
 
 class Room(PolymorphicModel):
     name = models.CharField(max_length=64, unique=True)
@@ -26,7 +28,7 @@ class Room(PolymorphicModel):
 class Message(PolymorphicModel):
     user = models.ForeignKey(User, null=True)
     # username field is useful to store guest name of unauthenticated users
-    username = models.CharField(max_length=20)
+    username = models.CharField(max_length=MX_LEN_USERNAME)
     date = models.DateTimeField()
     room = models.ForeignKey(Room)
     content = models.CharField(max_length=5000)
