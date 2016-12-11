@@ -8,18 +8,19 @@ from collections import deque
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ..utils.compat import (HttpResponse,
-                        HttpResponseBadRequest)
+from ..utils.compat import (HttpResponse, HttpResponseBadRequest)
 from django.utils.decorators import method_decorator
 
 from gevent.event import Event
 
-from ..models import Room
+from ..models import Room, UserSettings
 from ..signals import chat_message_received
 from ..utils.auth import check_user_passes_test
 from ..utils.decorators import ajax_user_passes_test_or_403
 from ..utils.decorators import ajax_room_login_required
 from ..utils.handlers import MessageHandlerFactory
+
+from appt.models import Client
 
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S:%f'
@@ -64,6 +65,8 @@ class ChatView(object):
         self.counters = {}
         self.connected_users = {}
         self.new_connected_user_event = {}
+        self.datetime_offset = {}
+        self.full_names = {}
         rooms = Room.objects.all()
         for room in rooms:
             self.new_message_events[room.id] = Event()
@@ -71,14 +74,20 @@ class ChatView(object):
             self.counters[room.id] = itertools.count(1)
             self.connected_users[room.id] = {}
             self.new_connected_user_event[room.id] = Event()
+            try:
+                client = Client.objects.get(user_name=room.slug)
+                self.datetime_offset[room.id] = client.utc_timedelta_secs
+                self.full_names[room.id] = client.full_name
+            except Client.DoesNotExist:
+                pass
 
     def get_username(self, request):
         """Returns username if user is authenticated, guest name otherwise """
         if request.user.is_authenticated():
             username = request.user.username
         else:
-            guestname = request.session.get('guest_name')
-            username = '(guest) %s' % guestname
+            session = request.session
+            username = '%s (%s)' % (session['your_name'], session['contact_no'])
         return username
 
     def signal_new_message_event(self, room_id):
@@ -102,6 +111,21 @@ class ChatView(object):
         """Returns the connected users given a room_id"""
         return self.connected_users[room_id]
 
+    def get_last_seen_id(self, username):
+        try:
+            settings = UserSettings.objects.get(username=username)
+        except UserSettings.DoesNotExist:
+            settings = UserSettings.objects.create(username=username)
+        return settings.last_seen_msg_id
+
+    def set_last_seen_id(self, username, last_seen_id):
+        try:
+            settings = UserSettings.objects.get(username=username)
+        except UserSettings.DoesNotExist:
+            settings = UserSettings.objects.create(username=username)
+        settings.last_seen_msg_id = last_seen_id
+        settings.save()
+
     @method_decorator(ajax_room_login_required)
     @method_decorator(ajax_user_passes_test_or_403(check_user_passes_test))
     def get_messages(self, request):
@@ -120,17 +144,25 @@ class ChatView(object):
             "Expected a GET request with 'room_id' and 'latest_message_id' "
             "parameters")
 
+
         messages = self.handler.retrieve_messages(
                         self, room_id, latest_msg_id)
 
+        room_name = Room.objects.get(pk=room_id).name
         to_jsonify = [
             {"message_id": msg_id,
-             "username": message.username,
-             "date": message.date.strftime(TIME_FORMAT),
+             "username": self.full_names[room_id] if message.username == room_name else message.username,
+             "date": (message.date + timedelta(seconds=self.datetime_offset[room_id])).strftime(TIME_FORMAT),
              "content": message.content}
             for msg_id, message in messages
             if msg_id > latest_msg_id
         ]
+
+        user = request.user
+        if to_jsonify and user.is_authenticated():
+            max_msg_id = max([x['message_id'] for x in to_jsonify])
+            self.set_last_seen_id(user.username, max_msg_id)
+
         return HttpResponse(json.dumps(to_jsonify),
                             mimetype="application/json")
 
@@ -220,7 +252,11 @@ class ChatView(object):
             room_id = int(request.GET['room_id'])
         except:
             return HttpResponseBadRequest()
-        latest_msg_id = self.handler.get_latest_message_id(self, room_id)
+        user = request.user
+        if user.is_authenticated():
+            latest_msg_id = self.get_last_seen_id(user.username)
+        else:
+            latest_msg_id = self.handler.get_latest_message_id(self, room_id)
         response = {"id": latest_msg_id}
         return HttpResponse(json.dumps(response), mimetype="application/json")
 

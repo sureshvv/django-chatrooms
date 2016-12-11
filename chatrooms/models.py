@@ -1,4 +1,4 @@
-#encoding=utf8
+# encoding=utf8
 
 from django.db import models
 from django.core.urlresolvers import reverse
@@ -30,3 +30,8 @@ class Message(PolymorphicModel):
     date = models.DateTimeField()
     room = models.ForeignKey(Room)
     content = models.CharField(max_length=5000)
+
+
+class UserSettings(models.Model):
+    username = models.CharField(primary_key=True, max_length=30)
+    last_seen_msg_id = models.IntegerField(default=0)

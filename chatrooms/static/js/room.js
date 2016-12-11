@@ -2,6 +2,7 @@
 */
 
 $(function(){
+    var TIMEOUT = 3000;
     var Context = getContext();
     var latest_message_id;
 
@@ -63,7 +64,7 @@ $(function(){
                 "message": escape(getEscapedText($('#chatSendText').val()))
             };
             $.post('/chat/send_message/', data_to_send, function(data){
-                $('#chatSendText').attr('value', "");
+                $('#chatSendText').val("");
             });
         }
     };
@@ -82,12 +83,12 @@ $(function(){
                 }
                 else {
                     to_append.push(
-                '<div class="chatMessage"><div class="messageDate">');
+                '<div class="chatMessage"><span class="messageDate">');
                 }
 
                 to_append.push(msgTime.hour + ':' + msgTime.minute +
                                ':' + msgTime.second);
-                to_append.push('</div> <div class="messageUsername">');
+                to_append.push('</span> <span class="messageUsername">');
                 if (Context.username === data[i].username){
                     to_append.push('You wrote:');
                 }
@@ -95,7 +96,7 @@ $(function(){
                     to_append.push(data[i].username + ' wrote:');
                 }
 
-                to_append.push('</div><div class="messageContent">');
+                to_append.push('</span><div class="messageContent">');
                 to_append.push(unescape(data[i].content));
                 to_append.push('</div>' + '</div>');
             }
@@ -116,11 +117,11 @@ $(function(){
                 $('#chatText').append(chatText);
                 $("#chatText").attr({
                     scrollTop: $("#chatText").attr("scrollHeight")});
-                window.setTimeout(chatGetMessages, 0);
+                window.setTimeout(chatGetMessages, TIMEOUT);
             },
             error: function(jqXHR, textStatus, errorThrown){
                 if (textStatus === 'timeout'){
-                    window.setTimeout(chatGetMessages, 0);
+                    window.setTimeout(chatGetMessages, TIMEOUT);
                 }
             }});
     };
@@ -131,7 +132,7 @@ $(function(){
             data: {'room_id': Context.room_id},
             type: 'POST',
             success: function(data){
-                // window.setTimeout(usersListGet, 0);
+                // window.setTimeout(usersListGet, TIMEOUT);
             }
             
         });
@@ -171,7 +172,7 @@ $(function(){
                                 '<li>'+ users[i].username + '</li>');}
                     }
                 }
-                window.setTimeout(usersListGet, 0);
+                window.setTimeout(usersListGet, TIMEOUT);
             }
         });
     };
@@ -194,7 +195,7 @@ $(function(){
     });
     
     
-    window.setTimeout(chatGetMessages, 0);
-    window.setTimeout(usersListGet, 0);
-    window.setTimeout(notifyConnection, 0);
+    window.setTimeout(chatGetMessages, TIMEOUT);
+    // window.setTimeout(usersListGet, TIMEOUT);
+    // window.setTimeout(notifyConnection, TIMEOUT);
 });
