@@ -20,7 +20,7 @@ from ..utils.decorators import ajax_user_passes_test_or_403
 from ..utils.decorators import ajax_room_login_required
 from ..utils.handlers import MessageHandlerFactory
 
-from appt.models import Client
+from appt.models.client import Client
 
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S:%f'
